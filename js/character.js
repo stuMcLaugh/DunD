@@ -173,6 +173,7 @@
         '<button type="button" class="btn small ghost" data-act="spend-hit-die"' +
           (hitDice.used >= hitDice.total ? ' disabled' : '') + '>Spend d' + hitDice.die + '</button>' +
         '<button type="button" class="btn small ghost" data-act="edit-in-party">Edit basics</button>' +
+        '<button type="button" class="btn small ghost" data-act="export-character">Export JSON</button>' +
       '</div>' +
       '<details class="char-config">' +
         '<summary>Speed &amp; hit dice</summary>' +
@@ -794,6 +795,8 @@
       var removeId = button.getAttribute('data-attack');
       c.pc.attacks = c.pc.attacks.filter(function (a) { return a.id !== removeId; });
       DnD.store.commit();
+    } else if (act === 'export-character') {
+      DnD.characterIO.downloadCharacter(c);
     } else if (act === 'portrait') {
       pickPortrait(c);
     } else if (act === 'clear-portrait') {

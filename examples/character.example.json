@@ -1,0 +1,76 @@
+{
+  "format": "dunD-character",
+  "version": 1,
+  "name": "Lyra",
+  "class": "Cleric",
+  "classId": "cleric",
+  "subclass": "Life Domain",
+  "level": 5,
+  "player": "Jordan",
+  "ac": 17,
+  "initMod": 0,
+  "passive": 16,
+  "speed": 30,
+  "hp": {
+    "current": 40,
+    "max": 40,
+    "temp": 0
+  },
+  "abilities": {
+    "str": 12,
+    "dex": 10,
+    "con": 14,
+    "int": 10,
+    "wis": 17,
+    "cha": 13
+  },
+  "saveProfs": ["wis", "cha"],
+  "skillProfs": {
+    "insight": "proficient",
+    "medicine": "proficient",
+    "perception": "proficient",
+    "religion": "proficient"
+  },
+  "attacks": [
+    {
+      "name": "Mace",
+      "bonus": 4,
+      "damage": "1d6+1",
+      "type": "bludgeoning"
+    },
+    {
+      "name": "Guiding Bolt",
+      "bonus": 6,
+      "damage": "4d6",
+      "type": "radiant"
+    }
+  ],
+  "spellAbility": "wis",
+  "spellList": "Cantrips: Guidance, Sacred Flame, Light\n1st: Bless, Healing Word, Shield of Faith\n2nd: Aid, Spiritual Weapon\n3rd: Spirit Guardians, Revivify",
+  "slots": [
+    { "level": 1, "max": 4, "used": 0 },
+    { "level": 2, "max": 3, "used": 0 },
+    { "level": 3, "max": 2, "used": 0 }
+  ],
+  "resources": [
+    { "name": "Channel Divinity", "max": 1, "used": 0, "recharge": "short" }
+  ],
+  "hitDice": {
+    "die": 8,
+    "total": 5,
+    "used": 0
+  },
+  "inspiration": false,
+  "conditions": [],
+  "features": "Channel Divinity, Disciple of Life, Preserve Life",
+  "inventory": "Mace, scale mail, shield, holy symbol, healer's kit",
+  "currency": {
+    "cp": 0,
+    "sp": 0,
+    "ep": 0,
+    "gp": 32,
+    "pp": 0
+  },
+  "notes": "Keeps the party alive. Prepared spells can change after a long rest.",
+  "portrait": ""
+}

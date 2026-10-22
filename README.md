@@ -28,7 +28,7 @@ at the table.
 | **Character** | A player dashboard that can be as light or as full as you want: a real class and subclass (hit die, saving throws, spell slots, class resources and level-based class features are applied automatically), HP and temp HP, death saves, conditions, ability scores and saving throws, all 18 skills with one-click rolls, attacks with attack/damage rolls, spell slots, spell save DC and attack bonus, prepared spells, limited-use resources, hit dice, inspiration, speed, AC, passive perception, currency, features, inventory, notes and a portrait. Short/long rest buttons restore the right resources. |
 | **Combat** | Initiative tracker with rounds and turns, roll initiative for the party, damage/heal, conditions, PC death saves, battlefield status for monsters, encounter log, long rest. |
 | **Dice** | Dice expression parser (`2d6+3`, `4d6kh3`, `2d20kl1`, mixed dice), advantage/disadvantage, quick d4–d100 buttons — **or type in the result of real dice** and let DunD add your modifier. |
-| **Party** | Character roster with portraits, AC, level, passive perception, HP controls and notes. Shared with Combat, so HP stays in sync. |
+| **Party** | Character roster with portraits, AC, level, passive perception, HP controls and notes, plus **character JSON import/export** and a downloadable example model. Shared with Combat, so HP stays in sync. |
 | **Bestiary** | Searchable list of ~95 SRD monsters (CR, AC, HP, XP), one-click add, plus an **encounter XP builder** with Easy/Medium/Hard/Deadly thresholds. |
 | **Notes** | Campaign name plus auto-saving session notes; copy or download as Markdown. |
 | **Reference** | Conditions, combat actions, cover, death saves, concentration and DC tables for quick lookups. |
@@ -73,6 +73,43 @@ the DM calls out), and **Next turn** advances the round automatically.
 - **Long rest** in the header restores all party hit points, spell slots and resources.
   The Character tab also has per-character **Short rest** / **Long rest** buttons.
 
+## Character JSON
+
+The **Party** tab has a **Character JSON** panel:
+
+- **Import character JSON** — load one character, an array of characters, or a whole DunD
+  save file (only player characters are taken from a full save).
+- **Download example model** — downloads the template below, which is also in
+  [`examples/character.example.json`](examples/character.example.json).
+- **Export JSON** on each party card (and on the Character tab) downloads that character
+  in the same format, so you can round-trip, back up or share a sheet.
+
+Class defaults are applied first from `class`/`classId`, then any fields you provide
+override them. Omit a field to keep the default.
+
+| Field | Notes |
+| --- | --- |
+| `name` | Required. |
+| `class` / `classId` | Class name (`"Rogue"`) or id (`"rogue"`). Also accepts a homebrew class name. |
+| `subclass`, `level`, `player` | Optional. |
+| `ac`, `initMod`, `passive`, `speed` | Optional numbers. Passive perception is calculated from WIS/Perception if omitted. |
+| `hp` | `{ "current": 40, "max": 40, "temp": 0 }`, or a single number for max/current. |
+| `abilities` | `str`, `dex`, `con`, `int`, `wis`, `cha` (default 10). |
+| `saveProfs` | Array of ability keys, e.g. `["wis", "cha"]`. |
+| `skillProfs` | Object: skill key → `"proficient"`, `"expertise"`, `1`, `2` or `0`. |
+| `attacks` | Array of `{ "name", "bonus", "damage", "type" }`. |
+| `spellAbility` | `"int"`, `"wis"`, `"cha"` or `""`. |
+| `spellList` | Free text for prepared/known spells. |
+| `slots` | Array of `{ "level", "max", "used" }`, an object like `{"1": 4}`, or an array of maxima. Omit to keep class defaults. |
+| `resources` | Array of `{ "name", "max", "used", "recharge": "short" }`. Omit to keep class defaults. |
+| `hitDice` | `{ "die": 8, "total": 5, "used": 0 }`. Omit to use the class die and level. |
+| `inspiration`, `conditions` | Optional. |
+| `features`, `inventory`, `currency`, `notes` | Optional. `currency` keys are `cp`, `sp`, `ep`, `gp`, `pp`. |
+| `portrait` | Optional `data:image/...` URL. |
+
+Numbers are clamped to sensible ranges and unknown fields are ignored. The importer
+accepts a single object, an array of objects, or a full save with a `combatants` array.
+
 ## Project layout
 
 ```
@@ -82,12 +119,14 @@ js/storage.js     localStorage state, defaults, sanitising, portraits, logging
 js/dice.js        dice expression parser/roller, physical-dice entry
 js/combat.js      initiative, turns, HP, conditions, encounter log, player view
 js/character.js   personal character sheet: class, abilities, saves, skills, attacks, slots, resources, rests, portrait
+js/character-io.js character JSON import/export and example model
 js/classes.js     D&D 5e class data: hit dice, saves, skills, slots, resources, features, subclasses
 js/party.js       party roster
 js/bestiary.js    SRD monster data, search and encounter builder
 js/notes.js       campaign/session notes
 js/reference.js   rules quick reference content
 js/app.js         app shell, tabs, header actions, shortcuts
+examples/         example character JSON model
 ```
 
 ## Attribution

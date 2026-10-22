@@ -480,6 +480,10 @@
       listeners.forEach(function (fn) { fn(store.state); });
     },
 
+    normalizeCharacter: function (raw) {
+      return normalizeCombatant(raw);
+    },
+
     log: function (text, kind) {
       var st = store.state;
       st.combat.log.push({

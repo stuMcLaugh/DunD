@@ -78,7 +78,10 @@
           '</div>' +
           '<label class="field full"><span>Notes</span><input data-edit="notes" maxlength="500" value="' + U.esc(c.notes) + '"></label>' +
         '</div>' +
-        '<div class="editor-actions"><button type="button" class="btn primary small" data-act="save">Save changes</button></div>' +
+        '<div class="editor-actions">' +
+          '<button type="button" class="btn primary small" data-act="save">Save changes</button>' +
+          '<button type="button" class="btn small ghost" data-act="export-json">Export JSON</button>' +
+        '</div>' +
       '</details>' +
     '</article>';
   }
@@ -179,6 +182,8 @@
       openEditors.delete(id);
       DnD.store.log(c.name + ' left the party.', 'info');
       DnD.store.commit();
+    } else if (act === 'export-json') {
+      DnD.characterIO.downloadCharacter(c);
     } else if (act === 'save') {
       saveEditor(c, card.querySelector('details'));
     }
@@ -283,6 +288,42 @@
     els.form.addEventListener('submit', onSubmit);
     els.list.addEventListener('click', onClick);
     els.list.addEventListener('toggle', onToggle, true);
+
+    var importButton = document.getElementById('btn-import-character');
+    var importFile = document.getElementById('import-character-file');
+    var exampleButton = document.getElementById('btn-example-character');
+
+    if (importButton && importFile) {
+      importButton.addEventListener('click', function () { importFile.click(); });
+      importFile.addEventListener('change', function () {
+        var file = importFile.files && importFile.files[0];
+        if (!file) return;
+
+        var reader = new FileReader();
+        reader.onload = function () {
+          try {
+            var result = DnD.characterIO.importText(String(reader.result));
+            var message = 'Imported ' + result.imported.join(', ') + '.';
+            if (result.errors.length) message += ' ' + result.errors.length + ' skipped.';
+            toast(message);
+            if (result.errors.length) console.warn('Character import warnings:', result.errors);
+          } catch (err) {
+            toast('Could not import: ' + err.message);
+          } finally {
+            importFile.value = '';
+          }
+        };
+        reader.onerror = function () {
+          toast('Could not read that file.');
+          importFile.value = '';
+        };
+        reader.readAsText(file);
+      });
+    }
+
+    if (exampleButton) {
+      exampleButton.addEventListener('click', function () { DnD.characterIO.downloadExample(); });
+    }
     els.list.addEventListener('change', function (event) {
       var select = event.target.closest('select[data-edit="class"]');
       if (!select) return;

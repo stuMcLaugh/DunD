@@ -1416,6 +1416,9 @@ kbd {
   text-align: right;
 }
 
+.io-card { margin-bottom: 14px; }
+.io-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
 /* Responsive --------------------------------------------------------- */
 
 @media (max-width: 1000px) {

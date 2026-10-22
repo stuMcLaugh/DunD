@@ -285,6 +285,18 @@
         </form>
 
         <div class="party-main">
+          <section class="card io-card">
+            <div class="card-head">
+              <h2>Character JSON</h2>
+              <span class="muted small">import / export</span>
+            </div>
+            <p class="hint">Load a character from a JSON model, or download the example and fill in your own stats.</p>
+            <div class="io-actions">
+              <button id="btn-import-character" class="btn small" type="button">Import character JSON</button>
+              <input type="file" id="import-character-file" accept=".json,application/json" hidden>
+              <button id="btn-example-character" class="btn small ghost" type="button">Download example model</button>
+            </div>
+          </section>
           <div id="party-list" class="party-grid"></div>
           <div id="party-empty" class="empty-state">
             <h3>Your party is empty</h3>
@@ -389,6 +401,7 @@
   <script src="js/dice.js"></script>
   <script src="js/combat.js"></script>
   <script src="js/character.js"></script>
+  <script src="js/character-io.js"></script>
   <script src="js/party.js"></script>
   <script src="js/bestiary.js"></script>
   <script src="js/notes.js"></script>

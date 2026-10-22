@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="DunD — an offline-friendly Dungeons &amp; Dragons table companion with initiative tracking, dice rolling, a party roster, a monster list and session notes.">
+  <title>DunD — Table Companion</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231d1510'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='20' font-weight='bold' text-anchor='middle' fill='%23c9a227'%3ED%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">D</div>
+      <div>
+        <h1>DunD</h1>
+        <p class="tagline">Initiative, dice, party &amp; notes for your table</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn ghost" id="btn-long-rest" type="button" title="Restore all party hit points">Long rest</button>
+      <button class="btn toggle" id="btn-player-view" type="button" aria-pressed="true" title="Hide monster HP and AC you have not learned yet">Player view: on</button>
+      <button class="btn ghost" id="btn-export" type="button" title="Download a save file">Export</button>
+      <button class="btn ghost" id="btn-import" type="button" title="Load a save file">Import</button>
+      <input type="file" id="import-file" accept=".json,application/json" hidden>
+      <button class="btn danger" id="btn-reset" type="button" title="Clear all saved data">Reset</button>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button class="tab" role="tab" id="tab-character" aria-controls="panel-character" aria-selected="false" tabindex="-1" data-tab="character">🧙 Character</button>
+    <button class="tab" role="tab" id="tab-combat" aria-controls="panel-combat" aria-selected="true" data-tab="combat">⚔️ Combat</button>
+    <button class="tab" role="tab" id="tab-dice" aria-controls="panel-dice" aria-selected="false" tabindex="-1" data-tab="dice">🎲 Dice</button>
+    <button class="tab" role="tab" id="tab-party" aria-controls="panel-party" aria-selected="false" tabindex="-1" data-tab="party">🛡️ Party</button>
+    <button class="tab" role="tab" id="tab-bestiary" aria-controls="panel-bestiary" aria-selected="false" tabindex="-1" data-tab="bestiary">🐉 Bestiary</button>
+    <button class="tab" role="tab" id="tab-notes" aria-controls="panel-notes" aria-selected="false" tabindex="-1" data-tab="notes">📜 Notes</button>
+    <button class="tab" role="tab" id="tab-reference" aria-controls="panel-reference" aria-selected="false" tabindex="-1" data-tab="reference">📖 Reference</button>
+  </nav>
+
+  <main id="main">
+    <!-- Character --------------------------------------------------------->
+    <section id="panel-character" class="panel" role="tabpanel" aria-labelledby="tab-character" hidden>
+      <div class="character-toolbar card">
+        <label class="field grow">
+          <span>Playing as</span>
+          <select id="character-select"></select>
+        </label>
+        <button id="btn-new-character" class="btn ghost" type="button">Add a character</button>
+        <p class="muted small character-hint">Paper sheet friendly — fill in as much or as little as you like; nothing here is required.</p>
+      </div>
+
+      <div id="character-empty" class="empty-state" hidden>
+        <h3>No character selected</h3>
+        <p>Pick one of your party members, or add a character first. You can change this at any time.</p>
+        <button class="btn primary" id="btn-character-empty-add" type="button">Add a character</button>
+      </div>
+
+      <div id="character-sheet" class="character-layout"></div>
+    </section>
+
+    <!-- Combat ------------------------------------------------------------>
+    <section id="panel-combat" class="panel" role="tabpanel" aria-labelledby="tab-combat">
+      <div class="combat-layout">
+        <div class="combat-main">
+          <div class="combat-toolbar card">
+            <div class="round-box">
+              <span class="round-label">Round</span>
+              <strong class="round-num" id="round-number">1</strong>
+            </div>
+            <div class="turn-box">
+              <span class="turn-label">Current turn</span>
+              <div class="turn-line">
+                <strong class="turn-name" id="turn-name">Not started</strong>
+                <span class="turn-pos" id="turn-position">0 combatants</span>
+              </div>
+            </div>
+            <div class="toolbar-actions">
+              <button class="btn ghost" id="btn-prev-turn" type="button" title="Previous turn">←</button>
+              <button class="btn primary" id="btn-next-turn" type="button" title="Next turn (N)">Next turn →</button>
+              <button class="btn ghost" id="btn-start-combat" type="button">Roll initiative</button>
+              <button class="btn ghost" id="btn-reset-encounter" type="button">New encounter</button>
+            </div>
+          </div>
+
+          <p class="mode-note" id="player-view-note">Player view is on: monster HP and AC are hidden until you mark them as known.</p>
+
+          <div id="combat-list" class="combat-list" aria-live="polite"></div>
+
+          <div id="combat-empty" class="empty-state" hidden>
+            <h3>No one in the encounter</h3>
+            <p>Add combatants with the form, pull monsters from the bestiary, or load a demo table to try things out.</p>
+            <button class="btn primary" id="btn-load-demo" type="button">Load demo encounter</button>
+          </div>
+
+          <p class="sr-only" id="turn-announcer" aria-live="assertive"></p>
+        </div>
+
+        <aside class="combat-side">
+          <form id="add-combatant" class="card add-form" autocomplete="off">
+            <h2>Add combatant</h2>
+            <div class="form-grid">
+              <label class="field full">
+                <span>Name</span>
+                <input name="name" required maxlength="60" placeholder="Goblin, Aria…">
+              </label>
+              <label class="field">
+                <span>Initiative</span>
+                <input name="initiative" type="number" placeholder="roll later">
+              </label>
+              <label class="field">
+                <span>Init mod</span>
+                <input name="initMod" type="number" value="0">
+              </label>
+              <label class="field">
+                <span>Max HP</span>
+                <input name="maxHp" type="number" value="10" min="1">
+              </label>
+              <label class="field">
+                <span>AC</span>
+                <input name="ac" type="number" value="10" min="0">
+              </label>
+              <label class="field">
+                <span>Type</span>
+                <select name="kind">
+                  <option value="monster">Monster</option>
+                  <option value="pc">Player</option>
+                  <option value="ally">Ally</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Copies</span>
+                <input name="quantity" type="number" value="1" min="1" max="20">
+              </label>
+              <label class="check full">
+                <input type="checkbox" name="trackHp" checked>
+                <span>I know this combatant's HP and AC</span>
+              </label>
+            </div>
+            <button class="btn primary full-width" type="submit">Add to encounter</button>
+            <p class="hint">Leave initiative blank and use <strong>Roll initiative</strong> to roll for the party.</p>
+          </form>
+
+          <section class="card log-card">
+            <div class="card-head">
+              <h2>Encounter log</h2>
+              <span class="muted small">auto</span>
+            </div>
+            <ol id="encounter-log" class="log-list" aria-live="polite"></ol>
+          </section>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Dice -------------------------------------------------------------->
+    <section id="panel-dice" class="panel" role="tabpanel" aria-labelledby="tab-dice" hidden>
+      <div class="dice-layout">
+        <div class="card dice-main">
+          <div class="dice-result">
+            <span class="dice-total" id="dice-total">—</span>
+            <span class="dice-expr" id="dice-expr">Roll something</span>
+            <div class="dice-breakdown" id="dice-breakdown"></div>
+          </div>
+
+          <form id="dice-form" class="dice-form" autocomplete="off">
+            <label class="field grow">
+              <span>Expression</span>
+              <input id="dice-expr-input" type="text" value="1d20" spellcheck="false" aria-label="Dice expression">
+            </label>
+            <label class="field mod-field">
+              <span>Modifier</span>
+              <input id="dice-modifier" type="number" value="0" step="1" aria-label="Modifier">
+            </label>
+            <label class="field">
+              <span>Roll type</span>
+              <select id="dice-mode" aria-label="Roll type">
+                <option value="normal">Normal</option>
+                <option value="adv">Advantage</option>
+                <option value="dis">Disadvantage</option>
+              </select>
+            </label>
+            <button class="btn primary" type="submit">Roll</button>
+          </form>
+
+          <div class="dice-quick" id="dice-quick" aria-label="Quick dice">
+            <button type="button" data-die="4">d4</button>
+            <button type="button" data-die="6">d6</button>
+            <button type="button" data-die="8">d8</button>
+            <button type="button" data-die="10">d10</button>
+            <button type="button" data-die="12">d12</button>
+            <button type="button" data-die="20" class="hot">d20</button>
+            <button type="button" data-die="100">d100</button>
+          </div>
+
+          <p class="hint">
+            Supports <code>2d6+3</code>, <code>4d6kh3</code> (keep highest), <code>2d20kl1</code> (keep lowest) and mixed dice like <code>1d8+1d6+2</code>.
+          </p>
+        </div>
+
+        <aside class="card">
+          <div class="card-head">
+            <h2>Roll history</h2>
+            <button id="btn-clear-dice" class="btn ghost small" type="button">Clear</button>
+          </div>
+          <ol id="dice-history" class="history"></ol>
+        </aside>
+      </div>
+
+      <section class="card physical-card">
+        <div class="card-head">
+          <h2>Rolling real dice?</h2>
+          <span class="muted small">paper-friendly</span>
+        </div>
+        <p class="hint physical-hint">Roll at the table, add up the dice, and type the total here — DunD adds your modifier and keeps the record.</p>
+        <form id="physical-form" class="physical-form" autocomplete="off">
+          <label class="field">
+            <span>Dice total</span>
+            <input id="physical-value" type="number" min="0" step="1" placeholder="14" aria-label="Total shown on the physical dice">
+          </label>
+          <label class="field">
+            <span>Modifier</span>
+            <input id="physical-mod" type="number" value="0" step="1" aria-label="Modifier to add">
+          </label>
+          <label class="field grow">
+            <span>What was it for?</span>
+            <input id="physical-note" maxlength="40" placeholder="Attack, Stealth, save…" aria-label="What the roll was for">
+          </label>
+          <button class="btn primary" type="submit">Record roll</button>
+        </form>
+      </section>
+    </section>
+
+    <!-- Party ------------------------------------------------------------->
+    <section id="panel-party" class="panel" role="tabpanel" aria-labelledby="tab-party" hidden>
+      <div class="party-layout">
+        <form id="party-form" class="card add-form" autocomplete="off">
+          <h2>Add character</h2>
+          <div class="form-grid">
+            <label class="field full">
+              <span>Name</span>
+              <input name="name" required maxlength="60" placeholder="Aria">
+            </label>
+            <label class="field">
+              <span>Class</span>
+              <select name="class" id="party-class-select"></select>
+            </label>
+            <label class="field">
+              <span>Subclass</span>
+              <input name="subclass" id="party-subclass" list="party-subclass-list" maxlength="40" placeholder="Optional">
+            </label>
+            <datalist id="party-subclass-list"></datalist>
+            <label class="field full" id="party-custom-class-field" hidden>
+              <span>Custom class name</span>
+              <input name="className" maxlength="40" placeholder="Homebrew class">
+            </label>
+            <label class="field">
+              <span>Level</span>
+              <input name="level" type="number" value="1" min="1" max="20">
+            </label>
+            <label class="field">
+              <span>Player</span>
+              <input name="player" maxlength="40" placeholder="Sam">
+            </label>
+            <label class="field">
+              <span>AC</span>
+              <input name="ac" type="number" value="10" min="0">
+            </label>
+            <label class="field">
+              <span>Max HP</span>
+              <input name="maxHp" type="number" value="10" min="1">
+            </label>
+            <label class="field">
+              <span>Init mod</span>
+              <input name="initMod" type="number" value="0">
+            </label>
+            <label class="field">
+              <span>Passive perc.</span>
+              <input name="passive" type="number" value="10" min="0">
+            </label>
+          </div>
+          <button class="btn primary full-width" type="submit">Add to party</button>
+          <p class="hint">Characters appear in Combat too, so hit points stay in sync everywhere.</p>
+        </form>
+
+        <div class="party-main">
+          <div id="party-list" class="party-grid"></div>
+          <div id="party-empty" class="empty-state">
+            <h3>Your party is empty</h3>
+            <p>Add your adventurers to track hit points, AC, passive perception and conditions between sessions.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bestiary ---------------------------------------------------------->
+    <section id="panel-bestiary" class="panel" role="tabpanel" aria-labelledby="tab-bestiary" hidden>
+      <div class="card bestiary-controls">
+        <label class="field grow">
+          <span>Search monsters</span>
+          <input id="bestiary-search" type="search" placeholder="goblin, dragon, undead…" autocomplete="off">
+        </label>
+        <label class="field">
+          <span>Challenge rating</span>
+          <select id="bestiary-cr">
+            <option value="all">Any</option>
+            <option value="low">0 – 1/2</option>
+            <option value="mid">1 – 4</option>
+            <option value="high">5 – 10</option>
+            <option value="epic">11+</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Copies</span>
+          <input id="bestiary-count" type="number" min="1" max="20" value="1">
+        </label>
+      </div>
+
+      <section class="card builder-card">
+        <div class="card-head">
+          <h2>Encounter builder</h2>
+          <span class="muted small">DM tool · 2014 guidelines</span>
+        </div>
+        <div class="builder-controls">
+          <label class="field">
+            <span>Party level</span>
+            <input id="builder-level" type="number" min="1" max="20" value="5">
+          </label>
+          <label class="field">
+            <span>Party size</span>
+            <input id="builder-size" type="number" min="1" max="10" value="4">
+          </label>
+          <div id="builder-summary" class="builder-summary"></div>
+          <button id="btn-builder-clear" class="btn ghost small" type="button">Clear build</button>
+        </div>
+        <div id="builder-list" class="builder-list"></div>
+      </section>
+
+      <p id="bestiary-summary" class="muted small"></p>
+      <div id="bestiary-list" class="monster-grid"></div>
+      <p class="attribution">Monster statistics summarized from the D&amp;D 5e System Reference Document (SRD 5.1), licensed CC BY 4.0.</p>
+    </section>
+
+    <!-- Notes ------------------------------------------------------------->
+    <section id="panel-notes" class="panel" role="tabpanel" aria-labelledby="tab-notes" hidden>
+      <div class="card notes-card">
+        <div class="card-head">
+          <h2>Campaign &amp; session notes</h2>
+          <span id="notes-status" class="muted small">Saved</span>
+        </div>
+        <label class="field">
+          <span>Campaign name</span>
+          <input id="campaign-name" maxlength="60" placeholder="Curse of the Crimson Hall">
+        </label>
+        <label class="field notes-field">
+          <span>Session notes</span>
+          <textarea id="notes-text" rows="18" placeholder="Loot, NPCs, secrets, plot threads, reminders for next session…"></textarea>
+        </label>
+        <div class="notes-actions">
+          <button id="btn-copy-notes" class="btn ghost" type="button">Copy notes</button>
+          <button id="btn-download-notes" class="btn ghost" type="button">Download .md</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Reference --------------------------------------------------------->
+    <section id="panel-reference" class="panel" role="tabpanel" aria-labelledby="tab-reference" hidden>
+      <div class="reference-grid" id="reference-content"></div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <span>Everything is saved automatically in this browser — no account, no network needed.</span>
+    <span class="footer-shortcuts">
+      <kbd>N</kbd> next turn · <kbd>R</kbd> dice · <kbd>Alt</kbd>+<kbd>1–7</kbd> tabs ·
+      <span id="save-stamp">Auto-saves locally</span>
+    </span>
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <noscript>
+    <p class="noscript">DunD needs JavaScript enabled to track combat and save your game.</p>
+  </noscript>
+
+  <script src="js/storage.js"></script>
+  <script src="js/classes.js"></script>
+  <script src="js/dice.js"></script>
+  <script src="js/combat.js"></script>
+  <script src="js/character.js"></script>
+  <script src="js/party.js"></script>
+  <script src="js/bestiary.js"></script>
+  <script src="js/notes.js"></script>
+  <script src="js/reference.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
